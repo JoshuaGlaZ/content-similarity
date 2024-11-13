@@ -16,7 +16,7 @@
         What do you text?
       </h1>
     </div>
-    <form>
+    <form id="searchForm">
       <div class="input-row">
         <div class="input-wrap">
           <label class="input-label" for="keyword">Keyword</label>
@@ -72,38 +72,69 @@
 
   <script>
     let currentPage = 1;
+    let totalPages = 1;
+    let allResults = [];
+    const contentPerPage = 5;
 
     $(document).ready(function() {
-      $('form').on('submit', function(e) {
+      $('#searchForm').on('submit', function(e) {
         e.preventDefault();
         currentPage = 1;
-        loadResults(currentPage);
+        loadResults();
       });
 
       $('#prevPage').on('click', function() {
         if (currentPage > 1) {
           currentPage--;
-          loadResults(currentPage);
+          displayResults(currentPage);
         }
       });
 
       $('#nextPage').on('click', function() {
-        currentPage++;
-        loadResults(currentPage);
+        if (currentPage < totalPages) {
+          currentPage++;
+          displayResults(currentPage);
+        }
       });
 
-      function loadResults(page) {
+      function loadResults() {
         $("body").css("cursor", "wait");
-        $('#submit ,#prevPage, #nextPage').prop('disabled', true);
+        $('#submit, #prevPage, #nextPage').prop('disabled', true);
 
-        var formData = $('form').serialize() + '&page=' + page;
+        const formData = $('#searchForm').serialize();
         $.ajax({
           url: 'result.php',
           type: 'POST',
           data: formData,
           dataType: 'json',
           success: function(response) {
-            let resultHtml = `<div class='wave-result'> 
+            allResults = response.data;
+            totalPages = Math.ceil(allResults.length / contentPerPage);
+            displayResults(currentPage); // Display the first page
+          },
+          error: function(xhr, status, error) {
+            console.error("Submission failed: " + status + ", " + error);
+            alert("An error occurred while submitting the form.");
+          },
+          complete: function() {
+            $('#submit, #prevPage, #nextPage').prop('disabled', false);
+            $("body").css("cursor", "default");
+          }
+        });
+      }
+
+      function displayResults(page) {
+        if (allResults.length === 0) {
+          $('#resultContent').html("<p>No results found.</p>").show();
+          $('#pagination').hide();
+          return;
+        }
+
+        const start = (page - 1) * contentPerPage;
+        const end = start + contentPerPage;
+        const pageData = allResults.slice(start, end);
+
+        let resultHtml = `<div class='wave-result'>
             <span style="--i:1">~</span>
             <span style="--i:2">R</span> 
             <span style="--i:3">E</span> 
@@ -111,44 +142,27 @@
             <span style="--i:5">U</span> 
             <span style="--i:6">L</span> 
             <span style="--i:7">T</span> 
-            <span style="--i:8">~</span> 
+            <span style="--i:8">~</span>
             </div>`;
-            console.log(response.keyword)
-            console.log(response.sources)
-            console.log(response.method)
-            response.data.forEach(item => {
-              resultHtml += `<article class="result-article"><strong>Source:</strong> ${item.source}<br>
-                             <strong>Original Text:</strong><br> ${item['original-text']}<br>
-                             <strong>Preprocess Result:</strong><br> ${item['preprocess-result']}<br>
-                             <strong>Similarity:</strong> ${item.similarity}</article>`;
-            });
 
-            $('#resultContent').html(resultHtml);
-            $('#resultContent').show();
-
-            $('#pageInfo').text(`Page ${response.current_page} of ${response.total_pages}`);
-
-            $('#prevPage').toggle(response.current_page > 1);
-            $('#nextPage').toggle(response.current_page < response.total_pages);
-
-
-            $('html, body').animate({
-              scrollTop: $('#results').offset().top
-            }, 500);
-          },
-          error: function(xhr, status, error) {
-            console.error("Submission failed: " + status + ", " + error);
-            if (xhr.responseJSON && xhr.responseJSON.error) {
-              alert("Error: " + xhr.responseJSON.error);
-            } else {
-              alert("An error occurred while submitting the form.");
-            }
-          },
-          complete: function() {
-            $('#submit, #prevPage, #nextPage').prop('disabled', false);
-            $("body").css("cursor", "default");
-          }
+        pageData.forEach(item => {
+          resultHtml += `<article class="result-article">
+                            <strong>Source:</strong> ${item.source}<br>
+                            <strong>Original Text:</strong><br> ${item['original-text']}<br>
+                            <strong>Preprocess Result:</strong><br> ${item['preprocess-result']}<br>
+                            <strong>Similarity:</strong> ${item.similarity}
+                         </article>`;
         });
+
+        $('#resultContent').html(resultHtml).show();
+        $('#pageInfo').text(`Page ${page} of ${totalPages}`);
+        $('#prevPage').toggle(page > 1);
+        $('#nextPage').toggle(page < totalPages);
+        $('#pagination').show();
+
+        $('html, body').animate({
+          scrollTop: $('#results').offset().top
+        }, 500);
       }
     });
   </script>
