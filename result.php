@@ -60,6 +60,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit;
       }
     }
+    if((!empty($sources) ? implode(", ", $sources) : "None") == 'youtube'){
+      $json = shell_exec('python youtube.py \"'.$keyword.'\"');
+      $data = json_decode($json, true);
+    }
     // }
 
     // $_SESSION['data'][$sessionKey] = $data;
