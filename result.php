@@ -50,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       $result = json_decode($output, true); // Decode JSON from Python
       if ($result !== null) {
         foreach ($result as &$item) {
-          $item['source'] = 'Instagram'; 
+          $item['source'] = 'Instagram - ' . $item['link']; 
         }
         unset($item); // Break reference with the last element
         $data = array_merge($data, $result); // Combine with existing data

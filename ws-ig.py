@@ -208,7 +208,7 @@ def scrape_instagram(driver, keywords):
                 except (NoSuchElementException, TimeoutException, StaleElementReferenceException):
                     break
                   
-            posts_output.append({"original-text": text})
+            posts_output.append({"original-text": text, 'link': driver.current_url})
 
             driver.close()
             driver.switch_to.window(driver.window_handles[0])
