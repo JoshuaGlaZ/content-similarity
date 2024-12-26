@@ -32,15 +32,15 @@ options.set_preference("media.peerconnection.enabled", False)
 # # Disable media devices to avoid detection
 options.set_preference("media.navigator.enabled", False)
 
-cookie = "instagram_cookies5.pkl"
+cookie = "instagram_cookies.pkl"
 
 keywords = sys.argv[1]  # ws-ig.py "piala dunia 2000"
 
 posts_output = []
 
-max_post = 10
-max_comment = 5
-max_reply = 5
+max_post = 3
+max_comment = 3
+max_reply = 3
 post_num = 0
 
 
