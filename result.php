@@ -1,75 +1,70 @@
 <?php
 session_start();
-set_time_limit(300); 
+set_time_limit(300);
 header('Content-Type: application/json');
 
 require __DIR__ . '/vendor/autoload.php';
 
 use Phpml\Tokenization\WhitespaceTokenizer;
-use Phpml\FeatureExtraction\StopWords;
+use Sastrawi\StopWordRemover\StopWordRemoverFactory;
+use Sastrawi\Stemmer\StemmerFactory;
 
-// Predefined stopwords
-$stopWords = new StopWords\English();
-
-// Function to preprocess text
-function preprocessText($text, $stopWords) {
-    // 1. Process hashtags
+// Fungsi untuk memproses teks
+function preprocessText($text)
+{
+    // 1. Proses hashtag
     $text = preg_replace_callback(
-        '/#([a-zA-Z0-9_]+)/',
+        '/#([a-zA-Z0-9]+)/',
         function ($matches) {
             $hashtag = $matches[1];
-            // Handle underscore separation
+            // Prioritizing underscore separation
             if (strpos($hashtag, '_') !== false) {
-                return str_replace('_', ' ', $hashtag);
+                $hashtag = str_replace('', ' ', $hashtag);
+            } else {
+                // Handle camel case only if no underscore is present
+                if (preg_match('/[A-Z]/', $hashtag)) {
+                    $hashtag = preg_replace('/([a-z])([A-Z])/', '$1 $2', $hashtag);
+                }
             }
-            // Handle camel case
-            if (preg_match('/[A-Z]/', $hashtag)) {
-                return preg_replace('/([a-z])([A-Z])/', '$1 $2', $hashtag);
-            }
-            // Single word or unclear separation
+            // Convert everything to lowercase
             return $hashtag;
         },
         $text
     );
 
-    // 2. Case folding
+    // 2. Case folding (mengubah ke huruf kecil)
     $text = strtolower($text);
 
-    // 3. Remove mentions (@)
+    // 3. Hapus mention (@)
     $text = preg_replace('/@[a-zA-Z0-9_]+/', '', $text);
 
-    // 4. Remove links and special symbols
-    $text = preg_replace('/https?:\/\/\S+|www\.\S+/', '', $text); // Links
-    $text = preg_replace('/[^\w\s]/', '', $text); // Special symbols
+    // 4. Hapus link dan simbol spesial
+    $text = preg_replace('/https?:\/\/\S+|www\.\S+/', '', $text); // Hapus link
+    $text = preg_replace('/[^\w\s]/', '', $text); // Hapus simbol spesial
 
-    // 5. Tokenize the text
+    // 5. Tokenisasi menggunakan Sastrawi
     $tokenizer = new WhitespaceTokenizer();
     $tokens = $tokenizer->tokenize($text);
 
-    // 6. Stopword removal
-    $tokens = array_filter($tokens, function ($word) use ($stopWords) {
-        return !$stopWords->isStopWord($word);
+    // 6. Stopword removal menggunakan Sastrawi
+    $stopWordRemoverFactory = new StopWordRemoverFactory();
+    $stopWordRemover = $stopWordRemoverFactory->createStopWordRemover();
+
+    // Filter stopword per token
+    $tokens = array_filter($tokens, function ($word) use ($stopWordRemover) {
+        return $stopWordRemover->remove($word) !== ''; // Jika bukan stopword
     });
 
-    // 7. Custom stemming
-    $tokens = array_map('simpleStemmer', $tokens);
+    // 7. Stemming sederhana (opsional)
+    $stemmerFactory = new StemmerFactory();
+    $stemmer = $stemmerFactory->createStemmer();
 
-    // Return the processed text as a string
+    $tokens = array_map(function ($word) use ($stemmer) {
+        return $stemmer->stem($word);
+    }, $tokens);
+
+    // Gabungkan kembali token yang telah diproses
     return implode(' ', $tokens);
-}
-
-// Simple stemming function
-function simpleStemmer($word) {
-    // Example: remove common suffixes
-    $patterns = [
-        '/ing$/',   // Remove -ing
-        '/ed$/',    // Remove -ed
-        '/ly$/',    // Remove -ly
-        '/es$/',    // Remove -es
-        '/s$/',     // Remove -s
-    ];
-    $word = preg_replace($patterns, '', $word);
-    return $word;
 }
 
 // Main script
@@ -107,7 +102,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($result !== null) {
                 foreach ($result as &$item) {
                     $item['source'] = 'Instagram - ' . $item['link'];
-                    $item['preprocess-result'] = preprocessText($item['original-text'], $stopWords);
+                    $item['preprocess-result'] = preprocessText($item['original-text']);
                 }
                 unset($item); // Break reference with the last element
                 $data = array_merge($data, $result);
@@ -124,7 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($result !== null) {
                 foreach ($result as &$item) {
                     $item['source'] = 'YouTube';
-                    $item['preprocess-result'] = preprocessText($item['original-text'], $stopWords);
+                    $item['preprocess-result'] = preprocessText($item['original-text']);
                 }
                 unset($item);
                 $data = array_merge($data, $result);
