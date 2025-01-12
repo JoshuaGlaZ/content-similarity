@@ -22,25 +22,21 @@ MAX_POSTS = 3
 MAX_COMMENTS = 3
 MAX_REPLIES = 3
 
+
 def configure_chrome_options():
     options = Options()
     ua = UserAgent()
     options.add_argument(f'user-agent={ua.random}')
-    options.add_argument('--headless=new')  
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--disable-web-security')
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--disable-webrtc')
-    options.add_argument('--disable-media-stream')
-    options.add_argument('--enable-tracking-protection')
-    options.add_experimental_option('excludeSwitches', ['enable-automation'])
-    options.add_experimental_option('useAutomationExtension', False)
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-browser-side-navigation')
-    options.add_argument('--disable-infobars')
-    
+    options.add_argument('--headless') # Run Chrome in headless mode (without UI) 
+    options.add_argument('--no-sandbox') # Set a random User-Agent
+    options.add_argument('--disable-images') # Disable image
+    options.add_argument('--disable-dev-tools') # Disable dev tools
+    options.add_argument('--disable-notifications')  # Disable notifications
+    options.add_argument('--disable-webrtc')  # Disable WebRTC to prevent IP address leakage
+    options.add_argument('--disable-media-stream')  # Disable media stream
+    options.add_argument('--disable-gpu')  # Disable GPU acceleration
+    options.add_argument('--log-level=3')  # Suppress info-level logs and above
+
     return options
 
 # Use cookies sessionid to avoid account being banned
@@ -240,7 +236,7 @@ def scrape_instagram(driver, keywords):
                 })
 
             except (TimeoutException, NoSuchElementException) as e:
-                print(f"Error processing post: {str(e)}")
+                pass
 
             # Close post tab and return to search results
             driver.close()
