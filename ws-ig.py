@@ -1,9 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, StaleElementReferenceException
 import time
 import pickle
@@ -12,7 +13,7 @@ import sys
 import json
 from fake_useragent import UserAgent
 
-# Configure Chrome options
+# Configure firefox options
 options = Options()
 ua = UserAgent()
 options.add_argument(f'user-agent={ua.random}')
@@ -24,7 +25,7 @@ options.add_argument('--disable-webrtc')
 options.add_argument('--disable-media-stream')
 options.add_argument('--enable-tracking-protection')
 
-cookie = "instagram_cookies.pkl"
+cookie = "instagram_cookies_ws11.pkl"
 
 keywords = sys.argv[1]
 
@@ -33,7 +34,6 @@ posts_output = []
 max_post = 3
 max_comment = 3
 max_reply = 3
-post_num = 0
 
 def save_cookies(driver, file_path):
     with open(file_path, "wb") as file:
@@ -45,6 +45,11 @@ def load_cookies(driver, file_path):
             driver.add_cookie(cookie)
 
 def login_instagram(driver):
+    '''
+    Login bisa pakai cookies pickle | load_cookies() ato isi manual | send_keys -> save_cookies(). 
+    - Cookie = instagram.com -> reload pake cookie -> done
+    - Manual = instagram.com -> isi username dan password -> submit -> save_cookies() -> done
+    '''
     driver.get("https://www.instagram.com")
 
     username = WebDriverWait(driver, 10).until(
@@ -52,26 +57,15 @@ def login_instagram(driver):
     password = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.NAME, "password")))
     username.clear()
-    username.send_keys("ttusj_7_.1")
+    username.send_keys("ws.agent0011")
     password.clear()
     password.send_keys("dummypassword")
     login_button = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit']")))
     login_button.click()
 
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located(
-        (By.CSS_SELECTOR, "svg[aria-label='Beranda']")))
+    time.sleep(4)
     save_cookies(driver, cookie)
-
-def safe_click(driver, element):
-    retries = 3
-    for _ in range(retries):
-        try:
-            element.click()
-            return
-        except StaleElementReferenceException:
-            time.sleep(0.1)
-    raise TimeoutException("Failed to click the element after retries")
 
 def scrape_instagram(driver, keywords):
     keywords = '+'.join(keywords.split(' '))
@@ -95,18 +89,26 @@ def scrape_instagram(driver, keywords):
         for link in result_links:
             if post_count >= max_post:
                 break
+              
+            comment_count = 0
+            reply_count = 0
 
             driver.execute_script("window.open(arguments[0], '_blank');", link)
             driver.switch_to.window(driver.window_handles[1])
             WebDriverWait(driver, 10).until(
                 lambda d: d.current_url != "about:blank")
 
+            # If without content with link == https://www.instagram.com/userX/, skip
             if len(driver.current_url.split('/')) == 5:
                 driver.close()
                 driver.switch_to.window(driver.window_handles[0])
                 continue
 
+            # If without username with link == https://www.instagram.com/p/g2rewaf/ or https://www.instagram.com/reel/g2rewaf/, 
+            # re-search -> https://www.instagram.com/userX/p/g2rewaf/ or https://www.instagram.com/userX/reel/g2rewaf/
+            # but if theres no username (undefined link), skip
             elif len(driver.current_url.split('/')) == 6:
+                # Get the post user's username 
                 user_post = WebDriverWait(driver, 5).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, "span._ap3a._aaco._aacw._aacx._aad7._aade"))).text
 
@@ -119,75 +121,62 @@ def scrape_instagram(driver, keywords):
                     driver.close()
                     driver.switch_to.window(driver.window_handles[0])
                     continue
-
-            try:
-                post_caption = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "h1"))).text
-            except TimeoutException:
-                post_caption = "No caption available for this post."
+            
+            text = ''
+            
+            post_content = WebDriverWait(driver, 10).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ul._a9z6._a9za > div")))
+            
+            post_caption = post_content[0].find_element(By.CSS_SELECTOR, "h1").text
 
             post_count += 1
             text = post_caption
 
-            try:
-                comments = WebDriverWait(driver, 5).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'ul._a9ym')))
-            except TimeoutException:
-                comments = []
+            comments = post_content[-1].find_elements(By.CSS_SELECTOR, "ul._a9ym")
+            time.sleep(2)
 
             for comment_num, comment in enumerate(comments):
-                try:
-                    user_comment = comment.find_element(
-                        By.CSS_SELECTOR, 'h3._a9zc div a').text
-                except NoSuchElementException:
-                    user_comment = "No username found"
-
-                try:
-                    comment_text = comment.find_element(
-                        By.CSS_SELECTOR, 'div._a9zs span._ap3a._aaco._aacu._aacx._aad7._aade').text
-                except NoSuchElementException:
-                    try:
-                        image_element = comment.find_element(
-                            By.CSS_SELECTOR, 'img')
-                        comment_text = f"[Image: {
-                            image_element.get_attribute('src')}]"
-                    except NoSuchElementException:
-                        comment_text = "No text or image in comment"
-
-                text += f"\n{user_comment}: {comment_text}" 
-
-                click_reply = 0
-                while click_reply < max_reply:
-                    try:
-                        more_replies = comment.find_element(
-                            By.CSS_SELECTOR, 'li._a9yg')
-                        if more_replies.is_displayed():
-                            safe_click(driver, more_replies)
-                            click_reply += 1
-                    except (NoSuchElementException, TimeoutException, StaleElementReferenceException):
-                        break
-
-                try:
-                    comment_replies = comment.find_element(
-                        By.CSS_SELECTOR, 'ul._a9yo')
-                    replies = comment_replies.find_elements(
-                        By.CSS_SELECTOR, 'div._a9zm')
-                    for reply_num, reply in enumerate(replies[:max_reply]):
-                        user_reply = reply.find_element(
-                            By.CSS_SELECTOR, 'span.xt0psk2 div a').text
-                        reply_text = reply.find_element(
-                            By.CSS_SELECTOR, 'div._a9zs span').text
-
-                        text += f"\n\t{user_reply}: {reply_text}" 
-
-                except (NoSuchElementException, TimeoutException, StaleElementReferenceException):
+                if comment_count >= max_comment:
                     break
+                try:
+                    # Extract main comment details
+                    user_comment = comment.find_element(By.CSS_SELECTOR, "h3 a").text
+                    comment_text = comment.find_element(By.CSS_SELECTOR, "div.xt0psk2 span").text
+                    text += f"\nKOMENTAR {comment_num + 1}: {user_comment}: {comment_text}"
+                    comment_count += 1
+                except NoSuchElementException:
+                    continue
+
+                try:
+                    # Locate the "more replies" section
+                    more_replies = comment.find_element(By.CSS_SELECTOR, 'ul._a9yo')
+                    
+                    if more_replies.is_displayed():
+                        driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", more_replies) # Scroll to more replies
+                        more_replies.click()  
+                        time.sleep(2)
+                        
+                        # Extract replies for this comment
+                    replies = comment.find_elements(By.CSS_SELECTOR, "ul._a9yo div._a9zm")
+                    for reply_num, reply in enumerate(replies):
+                        if reply_count >= max_reply:
+                            break
+                        try:
+                            user_reply = reply.find_element(By.CSS_SELECTOR, "h3 a").text
+                            reply_text = reply.find_element(By.CSS_SELECTOR, "div.xt0psk2 span").text
+                            text += f"\n\tREPLY {reply_num + 1}: {user_reply}: {reply_text}"
+                            reply_count += 1
+                        except NoSuchElementException:
+                            continue
+                except (NoSuchElementException, TimeoutException, StaleElementReferenceException):
+                    pass  
                   
             posts_output.append({"original-text": text, 'link': driver.current_url})
 
             driver.close()
             driver.switch_to.window(driver.window_handles[0])
 
+        # Click google page if not enough data
         if post_count < max_post:
             try:
                 next_button = WebDriverWait(driver, 5).until(
@@ -198,7 +187,7 @@ def scrape_instagram(driver, keywords):
             except TimeoutException:
                 break
 
-driver = webdriver.Chrome(options=options)
+driver = webdriver.Firefox(options=options)
 
 try:
     if os.path.exists(cookie):
