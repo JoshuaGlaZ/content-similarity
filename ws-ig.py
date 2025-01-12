@@ -25,19 +25,21 @@ MAX_REPLIES = 3
 def configure_chrome_options():
     options = Options()
     ua = UserAgent()
-    privacy_settings = [
-        f'user-agent={ua.random}',
-        '--disable-notifications',
-        '--disable-images',
-        '--disable-web-security',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-webrtc',
-        '--disable-media-stream',
-        '--enable-tracking-protection'
-    ]
-    
-    for setting in privacy_settings:
-        options.add_argument(setting)
+    options.add_argument(f'user-agent={ua.random}')
+    options.add_argument('--headless=new')  
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-web-security')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_argument('--disable-webrtc')
+    options.add_argument('--disable-media-stream')
+    options.add_argument('--enable-tracking-protection')
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-browser-side-navigation')
+    options.add_argument('--disable-infobars')
     
     return options
 
