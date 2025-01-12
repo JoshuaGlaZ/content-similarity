@@ -101,7 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $result = json_decode($output, true); // Decode JSON from Python
             if ($result !== null) {
                 foreach ($result as &$item) {
-                    $item['source'] = 'Instagram - ' . $item['link'];
+                    $item['source'] = 'Instagram';
                     $item['preprocess-result'] = preprocessText($item['original-text']);
                 }
                 unset($item); // Break reference with the last element
@@ -118,7 +118,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $result = json_decode($json, true);
             if ($result !== null) {
                 foreach ($result as &$item) {
-                    $item['source'] = 'YouTube';
                     $item['preprocess-result'] = preprocessText($item['original-text']);
                 }
                 unset($item);

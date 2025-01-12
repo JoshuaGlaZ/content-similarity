@@ -89,10 +89,9 @@ for link,title in video_links:
     comment = '<br>' + comment
     
     data.append({
-        'source': f'youtube - {title} - <a href="{link}">source link</a>',
-        'original-text': f'{description} <br><br> <b>KOMENTAR</b> {comment} <br>',
-        'preprocess-result': description,
-        'similarity': 0.0
+        'source': f'Youtube - {title}',
+        'original-text': f'{description} KOMENTAR: {comment}',
+        'link': link
     })
     
     wd_detail.quit()
