@@ -1,6 +1,6 @@
 <?php
 session_start();
-set_time_limit(300);
+set_time_limit(600);
 header('Content-Type: application/json');
 
 require __DIR__ . '/vendor/autoload.php';

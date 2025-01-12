@@ -1,5 +1,6 @@
 import sys
 import json
+import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -9,6 +10,7 @@ chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36") # simulasi pengguna biasa
 
 # Membatasi pemuatan resource eksternal
 prefs = {
@@ -44,6 +46,11 @@ for link,title in video_links:
     wd_detail = webdriver.Chrome(options=chrome_options)
     wd_detail.get(link)
 
+    for _ in range(5):  # Scroll 5 kali ke bawah untuk memuat komentar
+        wd_detail.execute_script("window.scrollBy(0, 1000);")
+        time.sleep(2)  # Tunggu pemuatan selesai
+
+
     wait = WebDriverWait(wd_detail, 10)
     # wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'ytd-item-section-renderer')))
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'span.yt-core-attributed-string.yt-core-attributed-string--white-space-pre-wrap')))
@@ -61,7 +68,10 @@ for link,title in video_links:
         'yt-attributed-string.style-scope.ytd-comment-view-model span.yt-core-attributed-string.yt-core-attributed-string--white-space-pre-wrap',
         'div#content.style-scope.ytd-expander span.yt-core-attributed-string.yt-core-attributed-string--white-space-pre-wrap',
         'yt-attributed-string#content-text span.yt-core-attributed-string--white-space-pre-wrap',
-        'yt-attributed-string#content-text span.yt-core-attributed-string.yt-core-attributed-string--white-space-pre-wrap'
+        'yt-attributed-string#content-text span.yt-core-attributed-string.yt-core-attributed-string--white-space-pre-wrap',
+        'ytd-comment-renderer #content-text',
+        'ytd-comment-thread-renderer #content-text',
+        'span.yt-core-attributed-string.yt-core-attributed-string--white-space-pre-wrap',
     ]
 
     comment = set()
@@ -70,9 +80,11 @@ for link,title in video_links:
         # WebDriverWait(wd_detail, 10).until(
         #     EC.presence_of_element_located((By.CSS_SELECTOR, selector))
         # )
+        # print(selector)
         comments = wd_detail.find_elements(By.CSS_SELECTOR, selector)
         for i in comments[:2]:
             comment.add(i.text.strip())
+            # print(i.text.strip())
     comment = '<br>'.join(comment)
     comment = '<br>' + comment
     
