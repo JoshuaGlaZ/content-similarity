@@ -4,6 +4,7 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 
 chrome_options = webdriver.ChromeOptions()
@@ -50,9 +51,15 @@ for link,title in video_links:
         wd_detail.execute_script("window.scrollBy(0, 100);")
         time.sleep(2)  # Tunggu pemuatan selesai
 
+    expand_buttons = wd_detail.find_elements(By.CSS_SELECTOR, "ytd-button-renderer#more-replies")
+    for button in expand_buttons[:2]:
+        try:
+            ActionChains(wd_detail).move_to_element(button).click(button).perform()
+            time.sleep(2)
+        except Exception as e:
+            print(f"Error: {e}")
 
     wait = WebDriverWait(wd_detail, 10)
-    # wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'ytd-item-section-renderer')))
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'ytd-item-section-renderer#sections.style-scope.ytd-comments')))
 
     # deskripsi
@@ -71,23 +78,28 @@ for link,title in video_links:
         'span.yt-core-attributed-string.yt-core-attributed-string--white-space-pre-wrap',
     ]
 
-    comment = set()
+    comment_list = set()
     for selector in comment_selectors:
-        # wd_detail.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        # WebDriverWait(wd_detail, 10).until(
-        #     EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-        # )
-        # print(selector)
-        comments = wd_detail.find_elements(By.CSS_SELECTOR, selector)
-        for i in comments[1:3]:
-            comment.add(i.text.strip())
-            # print(i.text.strip())
-    comment = '<br>'.join(comment)
-    comment = '<br>' + comment
+        comments = wd_detail.find_elements(By.CSS_SELECTOR, 'ytd-comment-thread-renderer')
+        for idx, comment in enumerate(comments[:2]):
+            try:
+                main_comment = comment.find_element(By.CSS_SELECTOR, '#content-text').text.strip()
+                text = main_comment
+
+                replies = comment.find_elements(By.CSS_SELECTOR, 'ytd-comment-replies-renderer #content-text')
+                for reply_idx, reply in enumerate(replies[:2]):
+                    text += '\n  ↳ Reply: '+reply.text.strip()
+
+            except Exception as e: print(f"Error processing comment {idx+1}: {e}")
+            comment_list.add(text)
+
+    comment_list = '<br>'.join(comment_list)
+    comment_list = '<br>' + comment_list
+    print(comment_list)
     
     data.append({
         'source': f'Youtube - {title}',
-        'original-text': f'{description} KOMENTAR: {comment}',
+        'original-text': f'{description} KOMENTAR: {comment_list}',
         'link': link
     })
     
