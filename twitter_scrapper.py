@@ -6,7 +6,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from time import sleep
-import argparse
+import sys
+import json
 from datetime import datetime
 
 def setup_driver():
@@ -16,7 +17,7 @@ def setup_driver():
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--disable-notifications')
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     return webdriver.Chrome(options=options)
 
 def wait_for_element(driver, by, value, timeout=10):
@@ -27,18 +28,15 @@ def wait_for_element(driver, by, value, timeout=10):
         )
         return element
     except TimeoutException:
-        print(f"Timeout waiting for element: {value}")
+        print(f"Timeout waiting for element: {value}", file=sys.stderr)
         return None
 
 def login_to_twitter(driver, username, password):
     """Login to Twitter"""
-    print("Logging in to Twitter...")
     try:
-        # Go to login page
-        driver.get('https://twitter.com/i/flow/login')
+        driver.get('https://x.com/i/flow/login')
         sleep(10)
         
-        # Find and fill username
         username_input = wait_for_element(
             driver,
             By.CSS_SELECTOR, 
@@ -51,7 +49,6 @@ def login_to_twitter(driver, username, password):
         username_input.send_keys(Keys.RETURN)
         sleep(2)
         
-        # Find and fill password
         password_input = wait_for_element(
             driver,
             By.CSS_SELECTOR,
@@ -64,29 +61,25 @@ def login_to_twitter(driver, username, password):
         password_input.send_keys(Keys.RETURN)
         sleep(5)
         
-        # Verify login
         wait_for_element(driver, By.CSS_SELECTOR, 'a[aria-label="Home"]')
-        print("Login successful!")
         return True
         
     except Exception as e:
-        print(f"Login failed: {str(e)}")
+        print(f"Login failed: {str(e)}", file=sys.stderr)
         return False
 
 def search_tweets(driver, query, max_tweets=10):
     """Search and collect tweets"""
     tweets = []
-    print(f"\nSearching for tweets about: {query}")
     
     try:
-        driver.get(f'https://twitter.com/search?q={query}&src=typed_query&f=live')
+        driver.get(f'https://x.com/search?q={query}&src=typed_query&f=live')
         sleep(10)
         
         tweet_count = 0
         last_height = driver.execute_script("return document.body.scrollHeight")
         
         while tweet_count < max_tweets:
-            # Find tweet cards
             tweet_cards = driver.find_elements(By.XPATH, '//article[@data-testid="tweet"]')
             
             for card in tweet_cards[tweet_count:]:
@@ -94,59 +87,63 @@ def search_tweets(driver, query, max_tweets=10):
                     break
                     
                 try:
-                    # Extract tweet data
                     username = card.find_element(By.XPATH, './/div[@data-testid="User-Name"]//span').text
                     text = card.find_element(By.XPATH, './/div[@data-testid="tweetText"]').text
                     
-                    # Store tweet
-                    tweets.append([username, text])
-                    tweet_count+=1
+                    tweet_data = {
+                        "username": username,
+                        "text": text,
+                    }
+                    
+                    tweets.append(tweet_data)
+                    tweet_count += 1
                     
                 except NoSuchElementException:
                     continue
             
-            # Scroll down
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             sleep(2)
             
-            # Check if we've reached the bottom
             new_height = driver.execute_script("return document.body.scrollHeight")
             if new_height == last_height:
                 break
             last_height = new_height
             
     except Exception as e:
-        print(f"Error collecting tweets: {str(e)}")
+        print(f"Error collecting tweets: {str(e)}", file=sys.stderr)
     
     return tweets
 
 def main():
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description='Twitter Scraper')
-    parser.add_argument('query', type=str, help='Search query for tweets')
-    parser.add_argument('--max_tweets', type=int, default=10, help='Maximum number of tweets to collect (default: 10)')
- 
+    if len(sys.argv) < 2:
+        print("Usage: python script.py <search_query> [max_tweets]", file=sys.stderr)
+        return {}
     
-    args = parser.parse_args()
+    query = sys.argv[1]
+    max_tweets = int(sys.argv[2]) if len(sys.argv) > 2 else 10
     
-    # Initialize the web driver
     driver = setup_driver()
+    tweets = []
     
     try:
-        # Login to Twitter
-        if login_to_twitter(driver, "FSuhargo123", "31245678Ab_"):
-            # Search and collect tweets
-            tweets = search_tweets(driver, args.query, args.max_tweets)
-            print(f"\nCollected {len(tweets)} tweets!")
-            
-            # Return tweets array
-            print("\nTweets array:")
-            print(tweets)
-            
+        if login_to_twitter(driver, "test130973", "31245678Ab_"):
+            tweets = search_tweets(driver, query, max_tweets)
     finally:
-        # Clean up
         driver.close()
         driver.quit()
+    
+    # Create result dictionary with metadata
+    result = {
+        "metadata": {
+            "query": query,
+            "max_tweets": max_tweets,
+        },
+        "tweets": tweets
+    }
+    
+    return result
 
 if __name__ == "__main__":
-    main()
+    result = main()
+    # Print the JSON result to stdout
+    print(json.dumps(result, indent=2, ensure_ascii=False))
