@@ -80,11 +80,11 @@ for link,title in video_links:
         # WebDriverWait(wd_detail, 10).until(
         #     EC.presence_of_element_located((By.CSS_SELECTOR, selector))
         # )
-        # print(selector)
+        print(selector)
         comments = wd_detail.find_elements(By.CSS_SELECTOR, selector)
-        for i in comments[:2]:
+        for i in comments[1:3]:
             comment.add(i.text.strip())
-            # print(i.text.strip())
+            print(i.text.strip())
     comment = '<br>'.join(comment)
     comment = '<br>' + comment
     
