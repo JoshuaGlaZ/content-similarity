@@ -5,6 +5,8 @@ header('Content-Type: application/json');
 
 require __DIR__ . '/vendor/autoload.php';
 
+use Phpml\FeatureExtraction\TfIdfTransformer;
+use Phpml\FeatureExtraction\TokenCountVectorizer;
 use Phpml\Tokenization\WhitespaceTokenizer;
 use Sastrawi\StopWordRemover\StopWordRemoverFactory;
 use Sastrawi\Stemmer\StemmerFactory;
@@ -65,6 +67,114 @@ function preprocessText($text)
 
     // Gabungkan kembali token yang telah diproses
     return implode(' ', $tokens);
+}
+
+// Fungsi untuk menghitung Term Frequency (TF)
+function calculateTF($document)
+{
+    $tf = [];
+    $totalTerms = count($document);
+
+    foreach ($document as $term) {
+        if (!isset($tf[$term])) {
+            $tf[$term] = 0;
+        }
+        $tf[$term]++;
+    }
+
+    // Normalisasi TF
+    foreach ($tf as $term => $count) {
+        $tf[$term] = $count / $totalTerms;
+    }
+
+    return $tf;
+}
+
+// Fungsi untuk menghitung Inverse Document Frequency (IDF)
+function calculateIDF($documents)
+{
+    $idf = [];
+    $totalDocuments = count($documents);
+
+    foreach ($documents as $document) {
+        $uniqueTerms = array_unique($document);
+        foreach ($uniqueTerms as $term) {
+            if (!isset($idf[$term])) {
+                $idf[$term] = 0;
+            }
+            $idf[$term]++;
+        }
+    }
+
+    // Hitung IDF
+    foreach ($idf as $term => $docCount) {
+        $idf[$term] = log($totalDocuments / $docCount, 10);
+    }
+
+    return $idf;
+}
+
+// Fungsi untuk menghitung TF-IDF
+function calculateTFIDF($documents)
+{
+    $tfidf = [];
+    $tfValues = [];
+    $tokenizedDocuments = [];
+
+    // Tokenisasi dokumen
+    foreach ($documents as $document) {
+        $tokenizedDocuments[] = explode(' ', $document);
+    }
+
+    // Hitung TF untuk setiap dokumen
+    foreach ($tokenizedDocuments as $document) {
+        $tfValues[] = calculateTF($document);
+    }
+
+    // Hitung IDF untuk semua dokumen
+    $idf = calculateIDF($tokenizedDocuments);
+
+    // Hitung TF-IDF
+    foreach ($tfValues as $docIndex => $tf) {
+        $tfidf[$docIndex] = [];
+        foreach ($tf as $term => $tfValue) {
+            $tfidf[$docIndex][$term] = $tfValue * ($idf[$term] ?? 0);
+        }
+    }
+
+    return $tfidf;
+}
+
+// Fungsi untuk menghitung similaritas Jaccard
+function calculateJaccardSimilarity($vector1, $vector2)
+{
+    $intersection = 0;
+    $union = 0;
+
+    foreach (array_keys($vector1 + $vector2) as $key) {
+        $val1 = $vector1[$key] ?? 0;
+        $val2 = $vector2[$key] ?? 0;
+        $intersection += min($val1, $val2);
+        $union += max($val1, $val2);
+    }
+
+    return $union == 0 ? 0 : $intersection / $union;
+}
+
+// Fungsi untuk menghitung similaritas Overlap
+function calculateOverlapSimilarity($vector1, $vector2)
+{
+    $intersection = 0;
+    $minValue = 0;
+
+    foreach (array_keys($vector1 + $vector2) as $key) {
+        $val1 = $vector1[$key] ?? 0;
+        $val2 = $vector2[$key] ?? 0;
+        $intersection += min($val1, $val2);
+        $minValue += $val1;
+    }
+
+    return $minValue == 0 ? 0 : $intersection / $minValue;
 }
 
 // Main script
@@ -134,7 +244,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $result = json_decode($json, true);
             if ($result !== null) {
                 foreach ($result as &$item) {
-                    $item['preprocess-result'] = preprocessText($item['text']);
+                    $item['preprocess-result'] = preprocessText($item['tweets']);
                 }
                 unset($item);
                 $data = array_merge($data, $result);
@@ -146,14 +256,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
+    // Hitung TF-IDF
+    $preprocessedData = array_map(function ($item) {
+        return $item['preprocess-result'];
+    }, $data);
+    $tfidfResults = calculateTFIDF($preprocessedData);
+
+    if (empty($preprocessedData)) {
+        error_log("Data setelah preprocessing kosong.");
+        echo json_encode(['error' => 'Preprocessed data is empty.']);
+        exit;
+    }
+
+    $similarity = [];
+    foreach ($tfidfResults as $index => $tfidfVector) {
+        $docVector = array_combine(array_keys($tfidfVector), array_values($tfidfVector));
+        $processedKeyword = preprocessText($keyword);
+        $keywordVector = calculateTF(explode(' ', $processedKeyword));
+        if($method == 'method_1'){
+            $similarity = calculateJaccardSimilarity($keywordVector, $docVector);
+        }
+        else{
+            $similarity = calculateOverlapSimilarity($keywordVector, $docVector);
+        }
+    }
+
+    usort($similarity, function ($a, $b) {
+        return $b['best_similarity'] <=> $a['best_similarity'];
+    });
+
     $response = [
         'keyword' => $keyword,
         'sources' => $sources,
         'method' => $method,
         'data' => $data,
-        'preprocess-result' => array_map(function ($item) {
-            return $item['preprocess-result'];
-        }, $data),
+        'tfidf-results' => $tfidfResults,
+        'similarity' => $similarity
     ];
 
     echo json_encode($response);

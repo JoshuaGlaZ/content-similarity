@@ -44,11 +44,11 @@
       <div class="input-group">
         <div class="input-row">
           <input class="input" type="radio" id="method_1" name="method" value="method_1" required checked>
-          <label class="input-label" for="method_1">Method 1</label>
+          <label class="input-label" for="method_1">Jaccard</label>
         </div>
         <div class="input-row">
           <input class="input" type="radio" id="method_2" name="method" value="method_2" required>
-          <label class="input-label" for="method_2">Method 2</label>
+          <label class="input-label" for="method_2">Overlap</label>
         </div>
       </div>
       <div class="divider"></div>

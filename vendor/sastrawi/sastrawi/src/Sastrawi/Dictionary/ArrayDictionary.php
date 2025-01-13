@@ -34,7 +34,7 @@ class ArrayDictionary implements DictionaryInterface
     /**
      * {@inheritdoc}
      */
-    public function count()
+    public function count(): int
     {
         return count($this->words);
     }
