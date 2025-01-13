@@ -31,7 +31,7 @@ def wait_for_element(driver, by, value, timeout=10):
         print(f"Timeout waiting for element: {value}", file=sys.stderr)
         return None
 
-def login_to_twitter(driver, username, password):
+def login_to_twitter(driver, username, password, email):
     """Login to Twitter"""
     try:
         driver.get('https://x.com/i/flow/login')
@@ -49,6 +49,16 @@ def login_to_twitter(driver, username, password):
         username_input.send_keys(Keys.RETURN)
         sleep(2)
         
+        email_input = wait_for_element(
+            driver,
+            By.CSS_SELECTOR,
+            'input[name="email"]'
+        )
+        if email_input:
+            email_input.send_keys(password)
+            email_input.send_keys(Keys.RETURN)
+            sleep(5)
+        
         password_input = wait_for_element(
             driver,
             By.CSS_SELECTOR,
@@ -59,7 +69,7 @@ def login_to_twitter(driver, username, password):
         
         password_input.send_keys(password)
         password_input.send_keys(Keys.RETURN)
-        sleep(5)
+        sleep(5) 
         
         wait_for_element(driver, By.CSS_SELECTOR, 'a[aria-label="Home"]')
         return True
@@ -92,7 +102,7 @@ def search_tweets(driver, query, max_tweets=10):
                     
                     tweet_data = {
                         "username": username,
-                        "text": text,
+                        "original-text": text,
                     }
                     
                     tweets.append(tweet_data)
@@ -126,7 +136,7 @@ def main():
     tweets = []
     
     try:
-        if login_to_twitter(driver, "test130973", "31245678Ab_"):
+        if login_to_twitter(driver, "test130973", "31245678Ab_", "fs7692190@gmail.com"):
             tweets = search_tweets(driver, query, max_tweets)
     finally:
         driver.close()

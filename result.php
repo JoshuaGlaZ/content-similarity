@@ -228,6 +228,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $result = json_decode($json, true);
             if ($result !== null) {
                 foreach ($result as &$item) {
+                    error_log(message: print_r($item, true));
                     $item['preprocess-result'] = preprocessText($item['original-text']);
                 }
                 unset($item);
@@ -238,19 +239,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit;
             }
         }
+
         if ($source == 'x') {
             $json = shell_exec('python twitter_scrapper.py "' . $keyword . '"');
             error_log("Raw Output: " . $json); // Log raw output for debugging
             $result = json_decode($json, true);
+<<<<<<< Updated upstream
             if ($result !== null) {
                 foreach ($result as &$item) {
                     $item['preprocess-result'] = preprocessText($item['tweets']);
+=======
+            if ($result !== null && isset($result['tweets'])) {
+                // Process the tweets array directly
+                foreach ($result['tweets'] as $tweet) {
+                    $processedTweet = [
+                        'link' => $tweet['username'],
+                        'original-text' => $tweet['original-text'],
+                        'source' => 'X',
+                        'preprocess-result' => preprocessText($tweet['original-text'])
+                    ];
+                    $data[] = $processedTweet;
+>>>>>>> Stashed changes
                 }
                 unset($item);
                 $data = array_merge($data, $result);
             } else {
                 http_response_code(500);
                 echo json_encode(['error' => 'Invalid JSON output from Python script.']);
+                echo json_encode(['error' => 'Invalid JSON output from Twitter Python script.']);
                 exit;
             }
         }
