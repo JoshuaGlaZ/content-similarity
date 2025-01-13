@@ -146,4 +146,4 @@ def main():
 if __name__ == "__main__":
     result = main()
     # Print the JSON result to stdout
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    print(json.dumps(result))

@@ -128,6 +128,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 exit;
             }
         }
+        if ($source == 'x') {
+            $json = shell_exec('python twitter_scrapper.py "' . $keyword . '"');
+            error_log("Raw Output: " . $json); // Log raw output for debugging
+            $result = json_decode($json, true);
+            if ($result !== null) {
+                foreach ($result as &$item) {
+                    $item['preprocess-result'] = preprocessText($item['text']);
+                }
+                unset($item);
+                $data = array_merge($data, $result);
+            } else {
+                http_response_code(500);
+                echo json_encode(['error' => 'Invalid JSON output from Python script.']);
+                exit;
+            }
+        }
     }
 
     $response = [
