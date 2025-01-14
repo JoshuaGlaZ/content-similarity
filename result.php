@@ -69,6 +69,11 @@ function preprocessText($text)
     return implode(' ', $tokens);
 }
 
+function tokenize($document)
+{
+    return explode(' ', strtolower($document));  // Tokenize and convert to lowercase
+}
+
 // Fungsi untuk menghitung Term Frequency (TF)
 function calculateTF($document)
 {
@@ -108,7 +113,7 @@ function calculateIDF($documents)
 
     // Hitung IDF
     foreach ($idf as $term => $docCount) {
-        $idf[$term] = log($totalDocuments / $docCount, 10);
+        $idf[$term] = log(($totalDocuments + 1) / ($docCount + 1), 10) + 1;  // Smoothing
     }
 
     return $idf;
@@ -123,7 +128,7 @@ function calculateTFIDF($documents)
 
     // Tokenisasi dokumen
     foreach ($documents as $document) {
-        $tokenizedDocuments[] = $document;
+        $tokenizedDocuments[] = tokenize($document);
     }
 
     // Hitung TF untuk setiap dokumen
@@ -196,7 +201,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $result = json_decode($json, true);
             if ($result !== null) {
                 foreach ($result as &$item) {
-                    error_log(message: print_r($item, true));
                     $item['preprocess-result'] = preprocessText($item['original-text']);
                 }
                 unset($item);
@@ -210,7 +214,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($source == 'x') {
             $json = shell_exec('python twitter_scrapper.py "' . $keyword . '"');
-            error_log("Raw Output: " . $json); // Log raw output for debugging
             $result = json_decode($json, true);
             if ($result !== null && isset($result['tweets'])) {
                 // Process the tweets array directly
@@ -232,18 +235,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // Preprocess the keyword
-    $tokenizer = new WhitespaceTokenizer();
-    $keywordTokens = $tokenizer->tokenize($keyword);
-    $vectorizer = new TokenCountVectorizer($tokenizer);
-
     // Include the keyword in the dataset for vectorization
     $preprocessedTexts = array_column($data, 'preprocess-result');
     $preprocessedTexts[] = $keyword;
-
-
-    $vectorizer->fit($preprocessedTexts);
-    $vectorizer->transform($preprocessedTexts);
+    error_log(print_r($preprocessedTexts, true)); 
 
     $tfidfVectors = calculateTFIDF($preprocessedTexts);
 
@@ -270,7 +265,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if($method == "method_1")
         {
-            error_log("jaccard succesful"); 
             $item['similarities'] = $jaccard;
         }
         else if($method == "method_2")
@@ -281,6 +275,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     unset($item);
 
     error_log(print_r($data, true)); 
+
+
 
     // Sort by  similarity descending
     usort($data, callback: function ($a, $b) {
