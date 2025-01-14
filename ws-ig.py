@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -17,25 +17,17 @@ import sys
 import json
 from fake_useragent import UserAgent
 
-COOKIE_FILE = "instagram_cookies_ws2.pkl" # Change if error google.com/null or ig warning. If still bugged, change driver to firefox
+COOKIE_FILE = "instagram_cookies_ws2.pkl" # Change if error google.com/null or ig warning. If still bugged, change driver to chrome
 MAX_POSTS = 3
 MAX_COMMENTS = 3
 MAX_REPLIES = 3
 
 
-def configure_firefox_options():
+def configure_chrome_options():
     options = Options()
     ua = UserAgent()
     options.add_argument(f'user-agent={ua.random}')
-    # options.add_argument('--headless') # Run Firefox in headless mode (without UI) 
-    options.add_argument('--no-sandbox') # Set a random User-Agent
-    options.add_argument('--disable-images') # Disable image
-    options.add_argument('--disable-dev-tools') # Disable dev tools
-    options.add_argument('--disable-notifications')  # Disable notifications
-    options.add_argument('--disable-webrtc')  # Disable WebRTC to prevent IP address leakage
-    options.add_argument('--disable-media-stream')  # Disable media stream
-    options.add_argument('--disable-gpu')  # Disable GPU acceleration
-    options.add_argument('--log-level=3')  # Suppress info-level logs and above
+    # options.add_argument('--headless') # Run Chrome in headless mode (without UI) 
 
     return options
 
@@ -254,7 +246,7 @@ def scrape_instagram(driver, keywords):
 
 def main():
     """Main execution function"""
-    driver = webdriver.Firefox(options=configure_firefox_options())
+    driver = webdriver.Chrome(options=configure_chrome_options())
     
     try:
         if os.path.exists(COOKIE_FILE):
