@@ -70,120 +70,80 @@ function preprocessText($text)
 }
 
 // Fungsi untuk menghitung Term Frequency (TF)
-// function calculateTF($document)
-// {
-//     $tf = [];
-//     $totalTerms = count($document);
+function calculateTF($document)
+{
+    $tf = [];
+    $totalTerms = count($document);
 
-//     foreach ($document as $term) {
-//         if (!isset($tf[$term])) {
-//             $tf[$term] = 0;
-//         }
-//         $tf[$term]++;
-//     }
+    foreach ($document as $term) {
+        if (!isset($tf[$term])) {
+            $tf[$term] = 0;
+        }
+        $tf[$term]++;
+    }
 
-//     // Normalisasi TF
-//     foreach ($tf as $term => $count) {
-//         $tf[$term] = $count / $totalTerms;
-//     }
+    // Normalisasi TF
+    foreach ($tf as $term => $count) {
+        $tf[$term] = $count / $totalTerms;
+    }
 
-//     return $tf;
-// }
+    return $tf;
+}
 
-// // Fungsi untuk menghitung Inverse Document Frequency (IDF)
-// function calculateIDF($documents)
-// {
-//     $idf = [];
-//     $totalDocuments = count($documents);
+// Fungsi untuk menghitung Inverse Document Frequency (IDF)
+function calculateIDF($documents)
+{
+    $idf = [];
+    $totalDocuments = count($documents);
 
-//     foreach ($documents as $document) {
-//         $uniqueTerms = array_unique($document);
-//         foreach ($uniqueTerms as $term) {
-//             if (!isset($idf[$term])) {
-//                 $idf[$term] = 0;
-//             }
-//             $idf[$term]++;
-//         }
-//     }
+    foreach ($documents as $document) {
+        $uniqueTerms = array_unique($document);
+        foreach ($uniqueTerms as $term) {
+            if (!isset($idf[$term])) {
+                $idf[$term] = 0;
+            }
+            $idf[$term]++;
+        }
+    }
 
-//     // Hitung IDF
-//     foreach ($idf as $term => $docCount) {
-//         $idf[$term] = log($totalDocuments / $docCount, 10);
-//     }
+    // Hitung IDF
+    foreach ($idf as $term => $docCount) {
+        $idf[$term] = log($totalDocuments / $docCount, 10);
+    }
 
-//     return $idf;
-// }
+    return $idf;
+}
 
-// // Fungsi untuk menghitung TF-IDF
-// function calculateTFIDF($documents)
-// {
-//     $tfidf = [];
-//     $tfValues = [];
-//     $tokenizedDocuments = [];
+// Fungsi untuk menghitung TF-IDF
+function calculateTFIDF($documents)
+{
+    $tfidf = [];
+    $tfValues = [];
+    $tokenizedDocuments = [];
 
-//     // Tokenisasi dokumen
-//     foreach ($documents as $document) {
-//         $tokenizedDocuments[] = explode(' ', $document);
-//     }
+    // Tokenisasi dokumen
+    foreach ($documents as $document) {
+        $tokenizedDocuments[] = $document;
+    }
 
-//     // Hitung TF untuk setiap dokumen
-//     foreach ($tokenizedDocuments as $document) {
-//         $tfValues[] = calculateTF($document);
-//     }
+    // Hitung TF untuk setiap dokumen
+    foreach ($tokenizedDocuments as $document) {
+        $tfValues[] = calculateTF($document);
+    }
 
-//     // Hitung IDF untuk semua dokumen
-//     $idf = calculateIDF($tokenizedDocuments);
+    // Hitung IDF untuk semua dokumen
+    $idf = calculateIDF($tokenizedDocuments);
 
-//     // Hitung TF-IDF
-//     foreach ($tfValues as $docIndex => $tf) {
-//         $tfidf[$docIndex] = [];
-//         foreach ($tf as $term => $tfValue) {
-//             $tfidf[$docIndex][$term] = $tfValue * ($idf[$term] ?? 0);
-//         }
-//     }
+    // Hitung TF-IDF
+    foreach ($tfValues as $docIndex => $tf) {
+        $tfidf[$docIndex] = [];
+        foreach ($tf as $term => $tfValue) {
+            $tfidf[$docIndex][$term] = $tfValue * ($idf[$term] ?? 0);
+        }
+    }
 
-//     return $tfidf;
-// }
-
-// // Fungsi untuk menghitung similaritas Jaccard
-// function calculateJaccardSimilarity($vector1, $vector2)
-// {
-//     $intersection = 0;
-//     $union = 0;
-
-//     // Get all unique terms from both vectors
-//     $allTerms = array_unique(array_merge(array_keys($vector1), array_keys($vector2)));
-
-//     foreach ($allTerms as $term) {
-//         $val1 = isset($vector1[$term]) ? $vector1[$term] : 0;
-//         $val2 = isset($vector2[$term]) ? $vector2[$term] : 0;
-
-//         $intersection += min($val1, $val2);
-//         $union += max($val1, $val2);
-//     }
-
-//     return $union == 0 ? 0 : $intersection / $union;
-// }
-
-// // Fungsi untuk menghitung similaritas Overlap
-// function calculateOverlapSimilarity($vector1, $vector2)
-// {
-//     $intersection = 0;
-//     $denominator = min(array_sum($vector1), array_sum($vector2));
-
-//     // Get all unique terms from both vectors
-//     $allTerms = array_unique(array_merge(array_keys($vector1), array_keys($vector2)));
-
-//     foreach ($allTerms as $term) {
-//         $val1 = isset($vector1[$term]) ? $vector1[$term] : 0;
-//         $val2 = isset($vector2[$term]) ? $vector2[$term] : 0;
-
-//         $intersection += min($val1, $val2);
-//     }
-
-//     return $denominator == 0 ? 0 : $intersection / $denominator;
-// }
-
+    return $tfidf;
+}
 
 // Main script
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -271,60 +231,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     }
-    error_log(print_r($data, true));
 
-    // // Preprocess the keyword
-    // $tokenizer = new WhitespaceTokenizer();
-    // $keywordTokens = $tokenizer->tokenize($keyword);
-    // $vectorizer = new TokenCountVectorizer($tokenizer);
+    // Preprocess the keyword
+    $tokenizer = new WhitespaceTokenizer();
+    $keywordTokens = $tokenizer->tokenize($keyword);
+    $vectorizer = new TokenCountVectorizer($tokenizer);
 
-    // // Include the keyword in the dataset for vectorization
-    // $preprocessedTexts = array_column($data, 'preprocess-result');
-    // $preprocessedTexts[] = $keyword;
+    // Include the keyword in the dataset for vectorization
+    $preprocessedTexts = array_column($data, 'preprocess-result');
+    $preprocessedTexts[] = $keyword;
 
-    // $vectorizer->fit($preprocessedTexts);
-    // $vectorizer->transform($preprocessedTexts);
 
-    // // Calculate TF-IDF
-    // $tfidfTransformer = new TfIdfTransformer();
-    // $tfidfTransformer->transform($preprocessedTexts);
+    $vectorizer->fit($preprocessedTexts);
+    $vectorizer->transform($preprocessedTexts);
 
-    // // Separate keyword TF-IDF from document TF-IDFs
-    // $keywordTfidf = array_pop($preprocessedTexts);
-    // foreach ($data as $index => &$item) {
-    //     $item['tfidf'] = $preprocessedTexts[$index];
-    // }
-    // unset($item);
+    $tfidfVectors = calculateTFIDF($preprocessedTexts);
 
-    // // Calculate Jaccard and Overlap similarities with the keyword
-    // foreach ($data as &$item) {
-    //     $tokens_i = array_keys($item['tfidf']);
-    //     $tokens_keyword = array_keys($keywordTfidf);
+    // Separate keyword TF-IDF from document TF-IDFs
+    $keywordTfidf = array_pop($tfidfVectors);
+    foreach ($data as $index => &$item) {
+        $item['tfidf'] = $tfidfVectors[$index];
+    }
+    unset($item);
 
-    //     $intersection = array_intersect($tokens_i, $tokens_keyword);
-    //     $union = array_unique(array_merge($tokens_i, $tokens_keyword));
+    // Calculate Jaccard and Overlap similarities with the keyword
+    foreach ($data as &$item) {
+        $tokens_i = array_keys($item['tfidf']);
+        $tokens_keyword = array_keys($keywordTfidf);
 
-    //     $intersection_count = count($intersection);
-    //     $union_count = count($union);
+        $intersection = array_intersect($tokens_i, $tokens_keyword);
+        $union = array_unique(array_merge($tokens_i, $tokens_keyword));
 
-    //     $jaccard = $union_count > 0 ? $intersection_count / $union_count : 0;
-    //     $overlap = min(count($tokens_i), count($tokens_keyword)) > 0 ? $intersection_count / min(count($tokens_i), count($tokens_keyword)) : 0;
+        $intersection_count = count($intersection);
+        $union_count = count($union);
 
-    //     if($method == "jaccard")
-    //     {
-    //         $item['similarities'] = $jaccard;
-    //     }
-    //     else if($method = "overlap")
-    //     {
-    //         $item['similarities'] = $overlap;
-    //     }
-    // }
-    // unset($item);
+        $jaccard = $union_count > 0 ? $intersection_count / $union_count : 0;
+        $overlap = min(count($tokens_i), count($tokens_keyword)) > 0 ? $intersection_count / min(count($tokens_i), count($tokens_keyword)) : 0;
 
-    // // Sort by  similarity descending
-    // usort($data, callback: function ($a, $b) {
-    //     return $b['similarities'] <=> $a['similarities'];
-    // });
+        if($method == "method_1")
+        {
+            error_log("jaccard succesful"); 
+            $item['similarities'] = $jaccard;
+        }
+        else if($method == "method_2")
+        {
+            $item['similarities'] = $overlap;
+        }
+    }
+    unset($item);
+
+    error_log(print_r($data, true)); 
+
+    // Sort by  similarity descending
+    usort($data, callback: function ($a, $b) {
+        return $b['similarities'] <=> $a['similarities'];
+    });
     $response = [
         'keyword' => $keyword,
         'sources' => $sources,

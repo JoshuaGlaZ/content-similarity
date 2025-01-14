@@ -133,6 +133,7 @@
         const start = (page - 1) * contentPerPage;
         const end = start + contentPerPage;
         const pageData = allResults.slice(start, end);
+        console.log(pageData); 
 
         let resultHtml = `<div class='wave-result'>
             <span style="--i:1">~</span>
@@ -146,6 +147,7 @@
             </div>`;
 
         pageData.forEach(item => {
+          console.log(item); 
           resultHtml += `<article class="result-article">
                             <strong>Source:</strong> ${item.source} | <a href="${item.link}" target="_blank">${item.link}</a><br>                            <strong>Original Text:</strong><br> ${item['original-text']}<br>
                             <strong>Preprocess Result:</strong><br> ${item['preprocess-result']}<br>
