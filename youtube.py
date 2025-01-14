@@ -8,7 +8,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 
 chrome_options = webdriver.ChromeOptions()
-# chrome_options.add_argument('--headless')
+chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
 chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36") # simulasi pengguna biasa
@@ -53,11 +53,8 @@ for link,title in video_links:
 
     expand_buttons = wd_detail.find_elements(By.CSS_SELECTOR, "ytd-button-renderer#more-replies")
     for button in expand_buttons[:2]:
-        try:
-            ActionChains(wd_detail).move_to_element(button).click(button).perform()
-            time.sleep(2)
-        except Exception as e:
-            print(f"Error: {e}")
+        ActionChains(wd_detail).move_to_element(button).click(button).perform()
+        time.sleep(2)
 
     wait = WebDriverWait(wd_detail, 10)
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'ytd-item-section-renderer#sections.style-scope.ytd-comments')))
@@ -82,20 +79,18 @@ for link,title in video_links:
     for selector in comment_selectors:
         comments = wd_detail.find_elements(By.CSS_SELECTOR, 'ytd-comment-thread-renderer')
         for idx, comment in enumerate(comments[:2]):
-            try:
-                main_comment = comment.find_element(By.CSS_SELECTOR, '#content-text').text.strip()
-                text = main_comment
+            main_comment = comment.find_element(By.CSS_SELECTOR, '#content-text').text.strip()
+            text = main_comment
 
-                replies = comment.find_elements(By.CSS_SELECTOR, 'ytd-comment-replies-renderer #content-text')
-                for reply_idx, reply in enumerate(replies[:2]):
-                    text += '\n  ↳ Reply: '+reply.text.strip()
+            replies = comment.find_elements(By.CSS_SELECTOR, 'ytd-comment-replies-renderer #content-text')
+            for reply_idx, reply in enumerate(replies[:2]):
+                text += '<br> -> Reply: '+reply.text.strip()
 
-            except Exception as e: print(f"Error processing comment {idx+1}: {e}")
             comment_list.add(text)
 
     comment_list = '<br>'.join(comment_list)
     comment_list = '<br>' + comment_list
-    print(comment_list)
+    # print(comment_list)
     
     data.append({
         'source': f'Youtube - {title}',
