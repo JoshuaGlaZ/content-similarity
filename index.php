@@ -149,7 +149,7 @@
           resultHtml += `<article class="result-article">
                             <strong>Source:</strong> ${item.source} | <a href="${item.link}" target="_blank">${item.link}</a><br>                            <strong>Original Text:</strong><br> ${item['original-text']}<br>
                             <strong>Preprocess Result:</strong><br> ${item['preprocess-result']}<br>
-                            <strong>Similarity:</strong> ${item.similarity}
+                            <strong>Similarity:</strong> ${item['similarities']}
                          </article>`;
         });
 

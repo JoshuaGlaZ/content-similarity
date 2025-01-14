@@ -27,7 +27,7 @@ def configure_chrome_options():
     options = Options()
     ua = UserAgent()
     options.add_argument(f'user-agent={ua.random}')
-    options.add_argument('--headless') # Run Chrome in headless mode (without UI) 
+    # options.add_argument('--headless') # Run Chrome in headless mode (without UI) 
     options.add_argument('--no-sandbox') # Set a random User-Agent
     options.add_argument('--disable-images') # Disable image
     options.add_argument('--disable-dev-tools') # Disable dev tools

@@ -8,7 +8,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 
 chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument('--headless')
+# chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
 chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36") # simulasi pengguna biasa
@@ -84,7 +84,7 @@ for link,title in video_links:
 
             replies = comment.find_elements(By.CSS_SELECTOR, 'ytd-comment-replies-renderer #content-text')
             for reply_idx, reply in enumerate(replies[:2]):
-                text += '<br> -> : '+reply.text.strip()
+                text += '<br> -> Reply: '+reply.text.strip()
 
             comment_list.add(text)
 
