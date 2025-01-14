@@ -1,6 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -17,17 +17,17 @@ import sys
 import json
 from fake_useragent import UserAgent
 
-COOKIE_FILE = "instagram_cookies_ws11.pkl" # Change if error google.com/null or ig warning. If still bugged, change driver to firefox
+COOKIE_FILE = "instagram_cookies_ws2.pkl" # Change if error google.com/null or ig warning. If still bugged, change driver to firefox
 MAX_POSTS = 3
 MAX_COMMENTS = 3
 MAX_REPLIES = 3
 
 
-def configure_chrome_options():
+def configure_firefox_options():
     options = Options()
     ua = UserAgent()
     options.add_argument(f'user-agent={ua.random}')
-    # options.add_argument('--headless') # Run Chrome in headless mode (without UI) 
+    # options.add_argument('--headless') # Run Firefox in headless mode (without UI) 
     options.add_argument('--no-sandbox') # Set a random User-Agent
     options.add_argument('--disable-images') # Disable image
     options.add_argument('--disable-dev-tools') # Disable dev tools
@@ -254,7 +254,7 @@ def scrape_instagram(driver, keywords):
 
 def main():
     """Main execution function"""
-    driver = webdriver.Chrome(options=configure_chrome_options())
+    driver = webdriver.Firefox(options=configure_firefox_options())
     
     try:
         if os.path.exists(COOKIE_FILE):
