@@ -244,11 +244,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $json = shell_exec('python twitter_scrapper.py "' . $keyword . '"');
             error_log("Raw Output: " . $json); // Log raw output for debugging
             $result = json_decode($json, true);
-<<<<<<< Updated upstream
-            if ($result !== null) {
-                foreach ($result as &$item) {
-                    $item['preprocess-result'] = preprocessText($item['tweets']);
-=======
             if ($result !== null && isset($result['tweets'])) {
                 // Process the tweets array directly
                 foreach ($result['tweets'] as $tweet) {
@@ -259,7 +254,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         'preprocess-result' => preprocessText($tweet['original-text'])
                     ];
                     $data[] = $processedTweet;
->>>>>>> Stashed changes
                 }
                 unset($item);
                 $data = array_merge($data, $result);

@@ -84,7 +84,7 @@ for link,title in video_links:
 
             replies = comment.find_elements(By.CSS_SELECTOR, 'ytd-comment-replies-renderer #content-text')
             for reply_idx, reply in enumerate(replies[:2]):
-                text += '<br> -> Reply: '+reply.text.strip()
+                text += '<br> -> : '+reply.text.strip()
 
             comment_list.add(text)
 
