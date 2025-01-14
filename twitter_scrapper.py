@@ -17,7 +17,7 @@ def setup_driver():
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument('--disable-notifications')
-    # options.add_argument('--headless')
+    options.add_argument('--headless')
     return webdriver.Chrome(options=options)
 
 def wait_for_element(driver, by, value, timeout=10):

@@ -27,7 +27,7 @@ def configure_chrome_options():
     options = Options()
     ua = UserAgent()
     options.add_argument(f'user-agent={ua.random}')
-    # options.add_argument('--headless') # Run Chrome in headless mode (without UI) 
+    options.add_argument('--headless') # Run Chrome in headless mode (without UI) 
 
     return options
 
